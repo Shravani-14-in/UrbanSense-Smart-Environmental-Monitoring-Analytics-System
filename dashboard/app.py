@@ -41,12 +41,30 @@ ON e.location_id = l.location_id
 df = pd.read_sql(location_query, conn)
 if selected_area != "All":
     df = df[df["area_name"] == selected_area]
-st.metric("Total Environmental Records", len(df))
-aqi_avg = round(df["aqi"].mean(), 2)
-st.metric(
-    "Average AQI",
-    aqi_avg
-)
+if selected_area != "All":
+    st.subheader("Location Details")
+    col1, col2, col3 = st.columns(3)
+    col1.metric(
+        "AQI",
+        round(df["aqi"].mean(), 2)
+    )
+    col2.metric(
+        "PM2.5",
+        round(df["pm25"].mean(), 2)
+    )
+    col3.metric(
+        "PM10",
+        round(df["pm10"].mean(), 2)
+    )
+    col1, col2 = st.columns(2)
+    col1.metric(
+        "Temperature",
+        round(df["temperature"].mean(), 2)
+    )
+    col2.metric(
+        "Humidity",
+        round(df["humidity"].mean(), 2)
+    )
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Records", len(df))
 col2.metric("Avg AQI", round(df["aqi"].mean(), 2))
@@ -65,7 +83,6 @@ elif avg_aqi <= 100:
     st.warning("Air Quality: Moderate")
 else:
     st.error("Air Quality: Poor")
-area_df = pd.read_sql(area_query, conn)
 fig2 = px.bar(
     area_df,
     x="area_name",
