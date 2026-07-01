@@ -111,4 +111,34 @@ st.map(
         }
     )
 )
+trend_query = """
+SELECT
+    DATE(recorded_at) AS day,
+    ROUND(AVG(aqi),2) AS avg_aqi
+FROM Env_Data
+GROUP BY DATE(recorded_at)
+ORDER BY day
+"""
+trend_df = pd.read_sql(trend_query, conn)
+fig = px.line(
+    trend_df,
+    x="day",
+    y="avg_aqi",
+    title="AQI Trend Over Time"
+)
+ranking = area_df.sort_values(
+    "avg_aqi",
+    ascending=False
+)
+
+st.subheader("Most Polluted Areas")
+st.dataframe(ranking)
+st.plotly_chart(fig)
+csv = df.to_csv(index=False)
+st.download_button(
+    "Download Data",
+    csv,
+    "urbansense_data.csv",
+    "text/csv"
+)
 conn.close()
