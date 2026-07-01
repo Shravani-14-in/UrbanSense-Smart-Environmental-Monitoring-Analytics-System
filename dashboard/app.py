@@ -70,7 +70,7 @@ col1.metric("Records", len(df))
 col2.metric("Avg AQI", round(df["aqi"].mean(), 2))
 col3.metric("Max AQI", int(df["aqi"].max()))
 col4.metric("Avg Temp", round(df["temperature"].mean(), 2))
-st.dataframe(df.head(20))
+st.dataframe(df)
 worst_area = area_df.loc[area_df["avg_aqi"].idxmax()]
 st.info(
     f" Highest average AQI detected in {worst_area['area_name']} "
@@ -89,7 +89,30 @@ fig2 = px.bar(
     y="avg_aqi",
     title="Average AQI by Area"
 )
-st.plotly_chart(fig2)
+trend_query = """
+SELECT
+    DATE(recorded_at) AS day,
+    ROUND(AVG(aqi),2) AS avg_aqi
+FROM Env_Data
+GROUP BY DATE(recorded_at)
+ORDER BY day
+"""
+trend_df = pd.read_sql(trend_query, conn)
+fig = px.line(
+    trend_df,
+    x="day",
+    y="avg_aqi",
+    title="AQI Trend Over Time"
+)
+ranking = area_df.sort_values(
+    "avg_aqi",
+    ascending=False
+)
+st.subheader("Most Polluted Areas")
+st.dataframe(ranking)
+st.plotly_chart(fig,use_container_width=True)
+csv = df.to_csv(index=False)
+st.plotly_chart(fig2,use_container_width=True)
 map_query = """
 SELECT
     l.area_name,
@@ -111,30 +134,6 @@ st.map(
         }
     )
 )
-trend_query = """
-SELECT
-    DATE(recorded_at) AS day,
-    ROUND(AVG(aqi),2) AS avg_aqi
-FROM Env_Data
-GROUP BY DATE(recorded_at)
-ORDER BY day
-"""
-trend_df = pd.read_sql(trend_query, conn)
-fig = px.line(
-    trend_df,
-    x="day",
-    y="avg_aqi",
-    title="AQI Trend Over Time"
-)
-ranking = area_df.sort_values(
-    "avg_aqi",
-    ascending=False
-)
-
-st.subheader("Most Polluted Areas")
-st.dataframe(ranking)
-st.plotly_chart(fig)
-csv = df.to_csv(index=False)
 st.download_button(
     "Download Data",
     csv,
